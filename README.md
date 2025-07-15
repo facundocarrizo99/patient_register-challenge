@@ -28,8 +28,6 @@ A FastAPI-based patient registration system with PostgreSQL, async email confirm
 
 ## Endpoints
 
-### Endpoints
-
 #### `POST /patients`  
 Creates a new patient.
 
@@ -41,17 +39,21 @@ curl --location 'http://localhost:8000/patients' \
 --form 'email="facundocarrizo99@gmail.com"' \
 --form 'phone="1134031128"' \
 --form 'document_photo=@"/Users/facundocarrizo/Pictures/my-notion-face-portrait.png"' 
-
+```
   
 
-- `GET /`  
-  Health check
-  curl --location 'http://localhost:8000/' \
+#### `GET /`  
+Health check
+
+**cURL example:**
+```bash
+curl --location 'http://localhost:8000/' \
 --header 'Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWVkNGE3MTVkNGU1YjI0MzBmZGIyZSIsImlhdCI6MTc1MjQ2MjM3NiwiZXhwIjoxNzUyNDY1OTc2fQ.Zmb56iXQBn8ia8v09Fyty7ELVlPMANaE0J84a_7ZNTw'
+```
 
 ## Testing
 
-You can use the provided `test_main.http` or Swagger UI.
+You can use the provided `test_main.http`
 
 ## Notes
 
@@ -61,12 +63,12 @@ You can use the provided `test_main.http` or Swagger UI.
 
 Evidence of data being saved on PostgreSQL:
 
-image.png
+<img width="1429" height="448" alt="image" src="https://github.com/user-attachments/assets/60462fe4-6699-4680-a11d-4215f3090674" />
 
 Evidence of Service running on Docker:
 
-image.png
+<img width="1222" height="448" alt="image" src="https://github.com/user-attachments/assets/cf7552ab-d5f9-4a2a-8e3d-0bab9992f48c" />
 
 Evidence of Mail being sent:
 
-image.png
+<img width="1289" height="332" alt="image" src="https://github.com/user-attachments/assets/09cf99a2-eae9-428a-9b8b-bccaf7b07b68" />
