@@ -22,8 +22,9 @@ A FastAPI-based patient registration system with PostgreSQL, async email confirm
    ```bash
    docker-compose up --build
    ```
-
-4. **API Docs**  
+   Please have in mind the Docker service should be active.
+   
+5. **API Docs**  
    Visit [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ## Endpoints
