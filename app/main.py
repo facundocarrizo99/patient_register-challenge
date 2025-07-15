@@ -1,6 +1,10 @@
-from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, BackgroundTasks, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import os
+import imghdr
 from . import models, schemas, crud, database, email_utils
 
 app = FastAPI()
@@ -16,6 +20,20 @@ def get_db():
         yield db
     finally:
         db.close()
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred."},
+    )
 
 @app.post("/patients", response_model=schemas.PatientOut)
 async def register_patient(
@@ -33,6 +51,20 @@ async def register_patient(
     if db.query(models.Patient).filter(models.Patient.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    # Validate file type
+    if not document_photo.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are allowed.")
+
+    # Validate file size (max 5MB)
+    contents = await document_photo.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 5MB).")
+    # Optionally check file signature
+    if imghdr.what(None, h=contents) not in ["jpeg", "png"]:
+        raise HTTPException(status_code=400, detail="Invalid image format. Only JPEG and PNG are allowed.")
+    # Reset file pointer for saving
+    document_photo.file.seek(0)
+
     # Save uploaded file
     file_ext = os.path.splitext(document_photo.filename)[1]
     file_name = f"{email.replace('@', '_at_')}{file_ext}"
@@ -41,7 +73,14 @@ async def register_patient(
         f.write(await document_photo.read())
 
     # Store patient in DB
-    patient = crud.create_patient(db, patient_in, document_photo_path=file_path)
+    try:
+        patient = crud.create_patient(db, patient_in, document_photo_path=file_path)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Database integrity error.")
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database error.")
 
     # Send confirmation email asynchronously
     background_tasks.add_task(email_utils.send_confirmation_email, email, name)
